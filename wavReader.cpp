@@ -2,266 +2,117 @@
 #include <fstream>
 #include <String>
 
+
 using namespace std;
 
 
-typedef struct  WAV_HEADER  {
-							    char 	RIFF[4];        // RIFF Header      Magic header
-							    int     ChunkSize;      // RIFF Chunk Size  
-							    char    WAVE[4];        // WAVE Header      
+short * wavReader(const char* fileName, int & sampleRate){
+    ifstream wavFile;
 
-							    char    fmt[4];         // FMT header       
-							    int     Subchunk1Size;  // Size of the fmt chunk                                
-							    short   AudioFormat;    // Audio format 1=PCM,6=mulaw,7=alaw, 257=IBM Mu-Law, 258=IBM A-Law, 259=ADPCM 
-							    short   NumOfChan;      // Number of channels 1=Mono 2=Sterio                   
-							    int     SamplesPerSec;  // Sampling Frequency in Hz                             
-							    int     bytesPerSec;    // bytes per second 
-							    short   blockAlign;     // 2=16-bit mono, 4=16-bit stereo 
-							    short   bitsPerSample;  // Number of bits per sample   
+    char    RIFF[4];        // RIFF Header      
+    int     ChunkSize;      // RIFF Chunk Size  
+    char    WAVE[4];        // WAVE Header      
 
-							    char    Subchunk2ID[4]; // "data"  string   
-							    int     Subchunk2Size;  // Sampled data length    
+    char    fmt[4];         // FMT header       
+    int     Subchunk1Size;  // Size of the fmt chunk                                
+    short   AudioFormat;    // Audio format 1=PCM,6=mulaw,7=alaw, 257=IBM Mu-Law, 258=IBM A-Law, 259=ADPCM 
+    short   NumOfChan;      // Number of channels 1=Mono 2=Sterio                   
+    int     SamplesPerSec;  // Sampling Frequency in Hz                             
+    int     bytesPerSec;    // bytes per second 
+    short   blockAlign;     // 2=16-bit mono, 4=16-bit stereo 
+    short   bitsPerSample;  // Number of bits per sample   
 
-							}wav_hdr; 
+    char    Subchunk2ID[4]; // "data"  string   
+    int     Subchunk2Size;  // Sampled data length    
+    int headerSize = 44;
+    int filelength = 0;
 
-// Function prototypes 
-int getFileSize(FILE *inFile); 
-int FFT(int A, int m, int omegaN) ;
-
-int wavReader(const char* fileName){
-    wav_hdr wavHeader;
-    FILE *wavFile;
-    int headerSize = sizeof(wav_hdr),filelength = 0;
-
-    wavFile = fopen(fileName, "r");
-
-    if(wavFile == NULL){
-        printf("Can not able to open wave file\n");
-    }
+    wavFile.open(fileName);
 
 
+    wavFile.read(RIFF,4);
+    wavFile.read(reinterpret_cast<char*>(&ChunkSize), 4);
+    wavFile.read(WAVE,4);
+    wavFile.read(fmt,4);
+    wavFile.read(reinterpret_cast<char*>(&Subchunk1Size), 4);
+    wavFile.read(reinterpret_cast<char*>(&AudioFormat), 2);
+    wavFile.read(reinterpret_cast<char*>(&NumOfChan), 2);
+    wavFile.read(reinterpret_cast<char*>(&SamplesPerSec), 4);
+    wavFile.read(reinterpret_cast<char*>(&bytesPerSec), 4);
+    wavFile.read(reinterpret_cast<char*>(&blockAlign), 2);
+    wavFile.read(reinterpret_cast<char*>(&bitsPerSample), 2);
+    wavFile.read(Subchunk2ID, 4);
 
-    fread(&wavHeader,headerSize,1,wavFile);
-    filelength = getFileSize(wavFile);
 
-    cout << "File is                    :" << filelength << " bytes." << endl;
+    filelength = ChunkSize + 8;
 
-    cout << "RIFF header                :" << wavHeader.RIFF[0] 
-                                            << wavHeader.RIFF[1] 
-                                            << wavHeader.RIFF[2] 
-                                            << wavHeader.RIFF[3] << endl;
+    // cout << "File is                    :" << filelength << " bytes." << endl;
 
-    cout << "WAVE header                :" << wavHeader.WAVE[0] 
-                                            << wavHeader.WAVE[1] 
-                                            << wavHeader.WAVE[2] 
-                                            << wavHeader.WAVE[3] 
+    cout << "RIFF header                :" << RIFF[0] 
+                                            << RIFF[1] 
+                                            << RIFF[2] 
+                                            << RIFF[3] << endl;
+
+    cout << "Chunk size                 :" << ChunkSize << endl;
+
+    cout << "WAVE header                :" << WAVE[0] 
+                                            << WAVE[1] 
+                                            << WAVE[2] 
+                                            << WAVE[3] 
                                             << endl;
 
-    cout << "FMT                        :" << wavHeader.fmt[0] 
-                                            << wavHeader.fmt[1] 
-                                            << wavHeader.fmt[2] 
-                                            << wavHeader.fmt[3] 
+    cout << "FMT                        :" << fmt[0] 
+                                            << fmt[1] 
+                                            << fmt[2] 
+                                            << fmt[3] 
                                             << endl;
 
-    cout << "Data size                  :" << wavHeader.ChunkSize << endl;
+    cout << "Subchunk 1 size            :" << Subchunk1Size << endl;
 
-    // Display the sampling Rate form the header
-    cout << "Sampling Rate              :" << wavHeader.SamplesPerSec << endl;
-    cout << "Number of bits used        :" << wavHeader.bitsPerSample << endl;
-    cout << "Number of channels         :" << wavHeader.NumOfChan << endl;
-    cout << "Number of bytes per second :" << wavHeader.bytesPerSec << endl;
-    cout << "Data length                :" << wavHeader.Subchunk2Size << endl;
-    cout << "Audio Format               :" << wavHeader.AudioFormat << endl;
-    // Audio format 1=PCM,6=mulaw,7=alaw, 257=IBM Mu-Law, 258=IBM A-Law, 259=ADPCM 
+    cout << "Audio Format               :" << AudioFormat << endl; // Audio format 1=PCM,6=mulaw,7=alaw, 257=IBM Mu-Law, 258=IBM A-Law, 259=ADPCM 
 
+    cout << "Number of channels         :" << NumOfChan << endl;
 
-    cout << "Block align                :" << wavHeader.blockAlign << endl;
+    cout << "Sampling Rate              :" << SamplesPerSec << endl; // Display the sampling Rate form the header
 
-    cout << "Data string                :" << wavHeader.Subchunk2ID[0] 
-                                            << wavHeader.Subchunk2ID[1]
-                                            << wavHeader.Subchunk2ID[2] 
-                                            << wavHeader.Subchunk2ID[3] 
+    cout << "Number of bytes per second :" << bytesPerSec << endl;
+
+    cout << "Block align                :" << blockAlign << endl;
+
+    cout << "Bits per sample            :" << bitsPerSample << endl;
+
+    cout << "Data string                :" << Subchunk2ID[0] 
+                                            << Subchunk2ID[1]
+                                            << Subchunk2ID[2] 
+                                            << Subchunk2ID[3] 
                                             << endl;
+    cout << "Subchunk 2 size            :" << Subchunk2Size << endl;
 
-    int bytesPerSample = (wavHeader.bitsPerSample)/8;
-    int numberOfSamples = ((filelength - sizeof(wav_hdr)) / bytesPerSample) / 2;
-	int sampleArray [numberOfSamples];
 
-	cout << filelength - sizeof(wav_hdr) << endl;
-	cout << "Bytes per sample: " << bytesPerSample << endl;
-	cout << "Number of samples: " << numberOfSamples << endl;
+    int bytesPerSample = (bitsPerSample)/8;
+    int numberOfSamples = ((filelength - headerSize) / bytesPerSample);
+    // static short sampleArray [numberOfSamples];
+    static short* sampleArray;
+    sampleArray = (short *)malloc(numberOfSamples * sizeof(short));
 
-    FILE * outputFile;
+    cout << "Bytes per sample: " << bytesPerSample << endl;
+    cout << "Number of samples: " << numberOfSamples << endl;
 
-    outputFile = fopen("output.txt", "wb");
 
-    while (!feof(wavFile))
+    while (!wavFile.eof())
     {
-            fread(sampleArray,bytesPerSample,numberOfSamples,wavFile);        // Reading data in chunks of bytesPerSample
-            fwrite(sampleArray,bytesPerSample,numberOfSamples,outputFile);
+            wavFile.read(reinterpret_cast<char*>(sampleArray), bytesPerSample * numberOfSamples);        // Reading data in chunks of bytesPerSample
     }
 
-    fclose(outputFile);
+    // for (int i = 0; i < numberOfSamples; i++) {
+    //  cout << sampleArray[i] << " ";
+    // }
 
-    cout << "numberOfSamples: " << numberOfSamples << endl;
-    for (int i = 0; i < numberOfSamples; i++) {
-    	cout << sampleArray[i] << " ";
-    }
+    wavFile.close();
 
-    // int w = cos(2*pi/16400) ;
-    // FFT(sampleArray, 16400, w) ;
+    sampleRate = SamplesPerSec;
 
-    fclose(wavFile);
+    free(sampleArray);
 
-    int index = 0;
-    int highestFrequency = wavHeader.SamplesPerSec / 2;
-
-    cout << endl << endl << endl << "First Tone: " << endl << endl << endl;
-
-    int offset;
-
-    int firstToneSize = highestFrequency * 0.1;
-    int firstTone[firstToneSize];
-
-    offset = firstToneSize;
-    cout << endl << "Offset1: " << offset << endl;
-
-    for (int i = 0; i < firstToneSize; i++) {
-        firstTone[index] = sampleArray[i];
-        cout << firstTone[index] << " ";
-        index++;
-    }
-
-    int firstGapSize = highestFrequency * 0.05;
-
-    offset = offset + firstGapSize;
-    cout << endl << "Offset2: " << offset << endl;
-
-    cout << endl << endl << endl << "Second Tone: " << endl << endl << endl;
-
-
-    int secondToneSize = highestFrequency * 0.1;
-    int secondTone[secondToneSize];
-
-    index = 0;
-    for (int i = 0 + offset; i < secondToneSize + offset; i++) {
-        secondTone[index] = sampleArray[i];
-        cout << secondTone[index] << " ";
-        index++;
-    }
-
-    offset = offset + secondToneSize;
-    cout << endl << "Offset3: " << offset << endl;
-
-    int secondGapSize = highestFrequency * 1.05;
-
-    offset = offset + secondGapSize;
-    cout << endl << "Offset4: " << offset << endl;
-
-    cout << endl << endl << endl << "Third Tone: " << endl << endl << endl;
-
-    int thirdToneSize = highestFrequency * 0.1;
-    int thirdTone[thirdToneSize];
-
-    index = 0;
-    for (int i = 0 + offset; i < thirdToneSize + offset; i++) {
-        thirdTone[index] = sampleArray[i];
-        cout << thirdTone[index] << " ";
-        index++;
-    }
-
-    offset = offset + thirdToneSize;
-    cout << endl << "Offset5: " << offset << endl;
-
-    int thirdGapSize = highestFrequency * 0.05;
-
-    offset = offset + thirdGapSize;
-    cout << endl << "Offset6: " << offset << endl;
-
-    cout << endl << endl << endl << "Fourth Tone: " << endl << endl << endl;
-
-    int fourthToneSize = highestFrequency * 0.1;
-    int fourthTone[fourthToneSize];
-
-    offset = offset + fourthToneSize;
-    cout << endl << "Offset7: " << offset << endl;
-
-    index = 0;
-    for (int i = 0 + offset; i < fourthToneSize + offset; i++) {
-        fourthTone[index] = sampleArray[i];
-        cout << fourthTone[index] << " ";
-        index++;
-    }
-
-    cout << endl << endl << endl << "Fifth Tone: " << endl << endl << endl;
-
-    int fourthGapSize = highestFrequency * 0.05;
-
-    offset = offset + fourthGapSize;
-    cout << endl << "Offset8: " << offset << endl;
-
-    int fifthToneSize = highestFrequency * 0.1;
-    int fifthTone[fifthToneSize];
-
-
-    index = 0;
-    for (int i = 0 + offset; i < fifthToneSize + offset; i++) {
-        fifthTone[index] = sampleArray[i];
-        cout << fifthTone[index] << " ";
-        index++;
-    }
-
-    offset = offset + fifthToneSize;
-    cout << endl << "Offset9: " << offset << endl;
-
-    cout << endl << endl << endl << "Sixth Tone: " << endl << endl << endl;
-
-    int fifthGapSize = highestFrequency * 0.05;
-
-    offset = offset + fifthGapSize;
-    cout << endl << "Offset10: " << offset << endl;
-
-    int sixthToneSize = highestFrequency * 0.1;
-    int sixthTone[sixthToneSize];
-
-    index = 0;
-    for (int i = 0 + offset; i < sixthToneSize + offset; i++) {
-        sixthTone[index] = sampleArray[i];
-        cout << sixthTone[index] << " ";
-        index++;
-    }
-
-    offset = offset + sixthToneSize;
-    cout << endl << "Offset11: " << offset << endl;
-
-    cout << endl << endl << endl << "Seventh Tone: " << endl << endl << endl;
-
-    int sixthGapSize = highestFrequency * 0.05;
-
-    offset = offset + sixthGapSize;
-    cout << endl << "Offset12: " << offset << endl;
-
-    int seventhToneSize = highestFrequency * 0.1;
-    int seventhTone[sixthToneSize];
-
-
-    index = 0;
-    for (int i = 0 + offset; i < seventhToneSize + offset; i++) {
-        seventhTone[index] = sampleArray[i];
-        cout << sixthTone[index] << " ";
-        index++;
-    }
-
-    return 0;
+    return sampleArray;
 } 
-// find the file size 
-int getFileSize(FILE *inFile){
-    int fileSize = 0;
-    fseek(inFile,0,SEEK_END);
-
-    fileSize=ftell(inFile);
-
-    fseek(inFile,0,SEEK_SET);
-    return fileSize;
-}
-
