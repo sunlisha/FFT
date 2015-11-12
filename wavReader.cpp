@@ -112,7 +112,7 @@ short * wavReader(const char* fileName, int & sampleRate){
 
     sampleRate = SamplesPerSec;
 
-    free(sampleArray);
+    // free(sampleArray);
 
     return sampleArray;
 } 
